@@ -68,45 +68,35 @@ class Tree {
 
 }
 
+class Node {
 
-abstract class Node {
     protected Descriptor desc;
     protected Node parent;
+
     
-    public abstract void _setParent(Node prt);
-    public abstract void _setDetails(Descriptor desc);
-    public abstract Node _getParent();
-    public abstract Descriptor _getDetails();
-    public abstract String _toString();
+    public void _setParent(Node prt) {
+        this.parent = prt;
+    }
+
+    public void _setDetails(Descriptor desc) {
+        this.desc = desc;
+    }
+
+    public Node _getParent() {
+        return this.parent;
+    }
+
+    public Descriptor _getDetails() {
+        return this.desc;
+    }
+
+    public String _toString() {
+        return this.desc._toString();
+    }
 }
 
 class File extends Node {
-
-    @Override
-    public void _setParent(Node prt) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void _setDetails(Descriptor desc) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Node _getParent() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Descriptor _getDetails() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public String _toString() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
+    //
 }
 
 class Directory extends Node {
@@ -127,10 +117,6 @@ class Directory extends Node {
         this.children = chd;
     }
 
-    public void _setParent(Node prt) {
-        this.parent = prt;
-    }
-
     public void _addChild(Node ch) {
         String k = ch._toString();
         if (this.children.containsKey(k)) {
@@ -145,22 +131,6 @@ class Directory extends Node {
         if (this.children.contains(ch)) {
             this.children.remove(ch);
         }
-    }
-
-    public void _setDetails(Descriptor d) {
-        this.desc = d;
-    }
-
-    public Descriptor _getDetails() {
-        return this.desc;
-    }
-
-    public String _toString() {
-        return this.desc._toString();
-    }
-
-    public Node _getParent() {
-        return this.parent;
     }
 
     public Hashtable<String, Node> _getChildren() {
