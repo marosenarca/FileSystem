@@ -16,10 +16,10 @@ import java.util.logging.Logger;
 class Tree {
 
     private static final Logger LOGGER = Logger.getLogger(Tree.class.getName());
-    Node root, current;
+    Directory root, current;
 
     public Tree() {
-        this.root = new Node("root", true);
+        this.root = new Directory("root");
         this.current = this.root;
     }
 
@@ -29,53 +29,99 @@ class Tree {
         this.current._addChild(n);
 
         if (n._getDetails()._isDirectory()) {
-            this.current = n;
+            this.current = (Directory) n;
         }
 
-        LOGGER.log(Level.INFO, "Successfully added new {0}: \"{1}\".", new Object[]{type, n._toString()});
+//        LOGGER.log(Level.INFO, "Successfully added new {0}: \"{1}\".", new Object[]{type, n._toString()});
     }
 
-    public boolean _search(Node start, Node n) {
+    public boolean _search(Directory start, Node n) {
         Hashtable<String, Node> tmpc = start._getChildren();
-        
+
         if (tmpc.containsKey(n._toString())) {
             return true;
         } else {
             for (String chk : tmpc.keySet()) {
                 Node ch = tmpc.get(chk);
-                if (ch._toString().equals(n._toString())) {
-                    return true;
-                } else if (ch._getDetails()._isDirectory()) {
-                    return _search(ch, n);
+                if (ch._getDetails()._isDirectory()) {
+                    return _search((Directory) ch, n);
                 }
             }
         }
         return false;
     }
+
+    public void _delete(Directory start, Node n) {
+        Hashtable<String, Node> tmpc = start._getChildren();
+
+        if (tmpc.containsKey(n._toString())) {
+            start._removeChild(n);
+        } else {
+            for (String chk : tmpc.keySet()) {
+                Node ch = tmpc.get(chk);
+                if (ch._getDetails()._isDirectory()) {
+                    _delete((Directory) ch, n);
+                }
+            }
+        }
+    }
+
+}
+
+
+abstract class Node {
+    protected Descriptor desc;
+    protected Node parent;
     
-    
+    public abstract void _setParent(Node prt);
+    public abstract void _setDetails(Descriptor desc);
+    public abstract Node _getParent();
+    public abstract Descriptor _getDetails();
+    public abstract String _toString();
+}
+
+class File extends Node {
+
+    @Override
+    public void _setParent(Node prt) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void _setDetails(Descriptor desc) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Node _getParent() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Descriptor _getDetails() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public String _toString() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
 }
 
-class Node {
+class Directory extends Node {
 
-    private Descriptor desc;
-    private Node parent;
     private Hashtable<String, Node> children;
 
-    public Node(boolean isDir) {
-        this(new Descriptor(isDir), null, new Hashtable<>());
+    public Directory(String n) {
+        this(new Descriptor(n, true), null, new Hashtable<>());
     }
 
-    public Node(String n, boolean isDir) {
-        this(new Descriptor(n, isDir), null, new Hashtable<>());
+    public Directory(String n, Node prt) {
+        this(new Descriptor(n, true), prt, new Hashtable<>());
     }
 
-    public Node(String n, boolean isDir, Node prt) {
-        this(new Descriptor(n, isDir), prt, new Hashtable<>());
-    }
-
-    public Node(Descriptor d, Node prt, Hashtable<String, Node> chd) {
+    public Directory(Descriptor d, Node prt, Hashtable<String, Node> chd) {
         this.desc = d;
         this.parent = prt;
         this.children = chd;
