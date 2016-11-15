@@ -5,8 +5,8 @@
  */
 package Main;
 
+import java.util.Date;
 import java.util.Hashtable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -72,8 +72,8 @@ class Node {
 
     protected Descriptor desc;
     protected Node parent;
-
-    
+    protected Date created;
+        
     public void _setParent(Node prt) {
         this.parent = prt;
     }
@@ -96,7 +96,18 @@ class Node {
 }
 
 class File extends Node {
-    //
+    private String content;
+    private Date modified;
+    
+    public File(Node prt, String n, String con) {
+    }
+    
+    public File (Descriptor d, Node prt, Date cr, Date mf, String c) {
+        this.desc = d;
+        this.parent = prt;
+        this.created = cr;
+        this.content = c;
+    }
 }
 
 class Directory extends Node {
