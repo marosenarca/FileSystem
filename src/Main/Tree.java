@@ -37,7 +37,7 @@ class Tree {
 
     public boolean _search(Node start, Node n) {
         Hashtable<String, Node> tmpc = start._getChildren();
-        
+
         if (tmpc.containsKey(n._toString())) {
             return true;
         } else {
@@ -52,9 +52,22 @@ class Tree {
         }
         return false;
     }
-    
-    
-    
+
+    public void _delete(Node start, Node n) {
+        Hashtable<String, Node> tmpc = start._getChildren();
+
+        if (tmpc.containsKey(n._toString())) {
+            start._removeChild(n);
+        } else {
+            for (String chk : tmpc.keySet()) {
+                Node ch = tmpc.get(chk);
+                if (ch._getDetails()._isDirectory()) {
+                    _delete(ch, n);
+                }
+            }
+        }
+    }
+
 }
 
 class Node {
