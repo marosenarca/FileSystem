@@ -5,6 +5,8 @@
  */
 package Main;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.logging.Logger;
@@ -69,10 +71,9 @@ class Tree {
 }
 
 class Node {
-
+    protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
     protected Descriptor desc;
     protected Node parent;
-    protected Date created;
         
     public void _setParent(Node prt) {
         this.parent = prt;
@@ -102,10 +103,9 @@ class File extends Node {
     public File(Node prt, String n, String con) {
     }
     
-    public File (Descriptor d, Node prt, Date cr, Date mf, String c) {
+    public File (Descriptor d, Node prt, Date mf, String c) {
         this.desc = d;
         this.parent = prt;
-        this.created = cr;
         this.content = c;
     }
 }
@@ -115,11 +115,11 @@ class Directory extends Node {
     private Hashtable<String, Node> children;
 
     public Directory(String n) {
-        this(new Descriptor(n, true), null, new Hashtable<>());
+        this(new Descriptor(n, true, new Date()), null, new Hashtable<>());
     }
 
     public Directory(String n, Node prt) {
-        this(new Descriptor(n, true), prt, new Hashtable<>());
+        this(new Descriptor(n, true, new Date()), prt, new Hashtable<>());
     }
 
     public Directory(Descriptor d, Node prt, Hashtable<String, Node> chd) {
@@ -154,15 +154,16 @@ class Descriptor {
 
     private String name;
     private boolean isDirectory;
+    private Date dtCreated;
 
-    public Descriptor(String n, boolean isDir) {
+    public Descriptor(String n, boolean isDir, Date d) {
         this.name = n;
         this.isDirectory = isDir;
+        this.dtCreated = d;
     }
 
-    public Descriptor(boolean isDir) {
-        this.isDirectory = isDir;
-        this.name = isDir ? "New Folder" : "New File";
+    public Descriptor(boolean isDir, Date d) {
+        this(isDir ? "New Folder" : "New File", isDir, d);
     }
 
     public String _toString() {
@@ -173,4 +174,7 @@ class Descriptor {
         return this.isDirectory;
     }
 
+    public Date _dateCreated() {
+        return this.dtCreated;
+    }
 }
