@@ -71,10 +71,11 @@ class Tree {
 }
 
 class Node {
+
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
     protected Descriptor desc;
     protected Node parent;
-        
+
     public void _setParent(Node prt) {
         this.parent = prt;
     }
@@ -91,22 +92,36 @@ class Node {
         return this.desc;
     }
 
+    public Date _getDateCreated() {
+        return this.desc._dateCreated();
+    }
+
     public String _toString() {
         return this.desc._toString();
     }
 }
 
 class File extends Node {
+
     private String content;
     private Date modified;
-    
+
     public File(Node prt, String n, String con) {
+        this(new Descriptor(n, false, new Date()), prt, new Date(), con);
     }
-    
-    public File (Descriptor d, Node prt, Date mf, String c) {
+
+    public File(Descriptor d, Node prt, Date mf, String c) {
         this.desc = d;
         this.parent = prt;
         this.content = c;
+    }
+
+    public String _getContent() {
+        return this.content.isEmpty() ? "This file is empty" : this.content;
+    }
+
+    public Date _getDateModified() {
+        return this.modified;
     }
 }
 
