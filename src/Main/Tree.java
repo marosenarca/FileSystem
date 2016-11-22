@@ -25,49 +25,72 @@ class Tree {
         this.current = this.root;
     }
 
-    public void _insert(Node n) {
-        String type = n._getDetails()._isDirectory() ? "directtory" : "file";
+    public void insert(Node n) {
+        String type = n._getDescriptor()._isDirectory() ? "directtory" : "file";
         n._setParent(this.current);
         this.current._addChild(n);
 
-        if (n._getDetails()._isDirectory()) {
+        if (n._getDescriptor()._isDirectory()) {
             this.current = (Directory) n;
         }
-
-//        LOGGER.log(Level.INFO, "Successfully added new {0}: \"{1}\".", new Object[]{type, n._toString()});
     }
 
-    public boolean _search(Directory start, Node n) {
+    public boolean search(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
-        if (tmpc.containsKey(n._toString())) {
-            return true;
-        } else {
-            for (String chk : tmpc.keySet()) {
-                Node ch = tmpc.get(chk);
-                if (ch._getDetails()._isDirectory()) {
-                    return _search((Directory) ch, n);
+        for (String chk : tmpc.keySet()) {
+            if (chk.equalsIgnoreCase(n)) {
+                return true;
+            }
+
+            Node ch = tmpc.get(chk);
+            if (ch._getDescriptor()._isDirectory()) {
+                if (ch.toString().equalsIgnoreCase(n)) {
+                    return true;
                 }
+                return search((Directory) ch, n);
             }
         }
         return false;
     }
 
-    public void _delete(Directory start, Node n) {
+    public Node getNode(Directory parent, String n) {
+        Hashtable<String, Node> tmpc = parent._getChildren();
+        for (String chk : tmpc.keySet()) {
+            if (chk.equalsIgnoreCase(n)) {
+                return tmpc.get(chk);
+            }
+
+            Node ch = tmpc.get(chk);
+            if (ch._getDescriptor()._isDirectory()) {
+                if (ch.toString().equalsIgnoreCase(n)) {
+                    return ch;
+                }
+                return getNode((Directory) ch, n);
+            }
+        }
+
+        return null;
+    }
+
+    public void remove(Directory start, Node n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
-        if (tmpc.containsKey(n._toString())) {
+        if (tmpc.containsKey(n.toString())) {
             start._removeChild(n);
         } else {
             for (String chk : tmpc.keySet()) {
                 Node ch = tmpc.get(chk);
-                if (ch._getDetails()._isDirectory()) {
-                    _delete((Directory) ch, n);
+                if (ch._getDescriptor()._isDirectory()) {
+                    remove((Directory) ch, n);
                 }
             }
         }
     }
 
+    public Node getCurrentNode() {
+        return this.current;
+    }
 }
 
 class Node {
@@ -88,7 +111,7 @@ class Node {
         return this.parent;
     }
 
-    public Descriptor _getDetails() {
+    public Descriptor _getDescriptor() {
         return this.desc;
     }
 
@@ -96,7 +119,8 @@ class Node {
         return this.desc._dateCreated();
     }
 
-    public String _toString() {
+    @Override
+    public String toString() {
         return this.desc._toString();
     }
 }
@@ -144,7 +168,7 @@ class Directory extends Node {
     }
 
     public void _addChild(Node ch) {
-        String k = ch._toString();
+        String k = ch.toString();
         if (this.children.containsKey(k)) {
             Node old = this.children.get(k);
             this.children.replace(k, old, ch);
