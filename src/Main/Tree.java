@@ -30,21 +30,6 @@ class Tree {
         prt._addChild(n);
     }
 
-    public void updateDirectory(Directory rt, Directory nw) {
-//        Hashtable<String, Node> tmpc = rt._getChildren();
-//        
-//        for (String chk : tmpc.keySet()) {
-//            if(chk.equalsIgnoreCase(nw.toString())) {
-//                tmpc.replace(chk, nw);
-//                break;
-//            } else if(tmpc.get(chk).isDirectory()) {
-//                rt = (Directory) tmpc.get(chk);
-//                updateDirectory(rt, nw);
-//            }
-//        }
-//        
-    }
-
     public boolean searchDirectory(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
@@ -120,6 +105,15 @@ class Tree {
             System.out.println(tmpc.get(s)._getDetails());
         });
     }
+
+    public void listRE(Directory curr, String re) {
+        Hashtable<String, Node> tmpc = curr._getChildren();
+        tmpc.keySet().stream().forEach((s) -> {
+            if(s.matches(re)) {
+                System.out.println(tmpc.get(s)._getDetails());
+            }
+        });
+    }
 }
 
 abstract class Node {
@@ -158,21 +152,22 @@ abstract class Node {
     }
 }
 
-class File extends Node {
+class CustomFile extends Node {
 
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
-    private String content;
+    private String content, type;
     private Date modified;
 
-    public File(Directory prt, String n, String con) {
-        this(new Descriptor(n, false, new Date()), prt, new Date(), con);
+    public CustomFile(Directory prt, String n, String con, String type) {
+        this(new Descriptor(n, false, new Date()), prt, new Date(), con, type);
     }
 
-    public File(Descriptor d, Directory prt, Date mf, String c) {
+    public CustomFile(Descriptor d, Directory prt, Date mf, String c, String type) {
         this.desc = d;
         this.parent = prt;
         this.content = c;
+        this.type = type;
     }
 
     public String _getContent() {
@@ -182,17 +177,25 @@ class File extends Node {
     public Date _getDateModified() {
         return this.modified;
     }
-
+    
+    public String _getType() {
+        return "DOC";
+    }
+    
     @Override
     public String _getDetails() {
         StringBuilder sb = new StringBuilder(dateFormat.format(this.desc._dateCreated())).append("\t");
-        sb.append("<File>").append("\t").append(this.toString());
+        sb.append("<"+this.type.toUpperCase()+">").append("\t").append(this.toString());
         return sb.toString();
     }
 
     @Override
     public boolean isDirectory() {
         return false;
+    }
+
+    public String _getFile(){
+        return this.toString()+"."+this.type;
     }
 }
 
