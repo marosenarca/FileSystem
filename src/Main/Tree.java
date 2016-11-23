@@ -9,7 +9,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Stack;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -79,10 +82,15 @@ class Tree {
         }
     }
 
-    public void deepRemove(Directory prt, String n) {
-        
-    }    
-    
+    public void removeAll(Directory start, String re) {
+        Hashtable<String, Node> tmpc = start._getChildren();
+        tmpc.keySet().stream().forEach((s) -> {
+            if (s.endsWith(re)) {
+                start._removeChild(s);
+            }
+        });
+    }
+
     public Directory getCurrentNode() {
         return this.current;
     }
@@ -106,10 +114,10 @@ class Tree {
         });
     }
 
-    public void listRE(Directory curr, String re) {
+    public void listAll(Directory curr, String re) {
         Hashtable<String, Node> tmpc = curr._getChildren();
         tmpc.keySet().stream().forEach((s) -> {
-            if(s.matches(re)) {
+            if (s.matches(re)) {
                 System.out.println(tmpc.get(s)._getDetails());
             }
         });
@@ -146,6 +154,29 @@ abstract class Node {
 
     public abstract boolean isDirectory();
 
+    public String _getPath() {
+        Stack<Node> path = new Stack<>();
+        StringBuilder sb = new StringBuilder();
+        Node n = this;
+        while (n != null) {
+            path.add(n);
+            n = n._getParent();
+        }
+        boolean flag = false;
+        while (!path.isEmpty()) {
+            if (flag) {
+                sb.append("\\");
+            }
+            sb.append(path.pop().toString());
+            flag = true;
+        }
+        return sb.toString();
+    }
+
+    public void rename(String name) {
+        this.desc._setName(name);
+    }
+
     @Override
     public String toString() {
         return this.desc._toString();
@@ -177,15 +208,15 @@ class CustomFile extends Node {
     public Date _getDateModified() {
         return this.modified;
     }
-    
+
     public String _getType() {
         return "DOC";
     }
-    
+
     @Override
     public String _getDetails() {
         StringBuilder sb = new StringBuilder(dateFormat.format(this.desc._dateCreated())).append("\t");
-        sb.append("<"+this.type.toUpperCase()+">").append("\t").append(this.toString());
+        sb.append("<" + this.type.toUpperCase() + ">").append("\t").append(this.toString());
         return sb.toString();
     }
 
@@ -194,8 +225,8 @@ class CustomFile extends Node {
         return false;
     }
 
-    public String _getFile(){
-        return this.toString()+"."+this.type;
+    public String _getFile() {
+        return this.toString() + "." + this.type;
     }
 }
 
@@ -238,9 +269,27 @@ class Directory extends Node {
     public boolean _contains(String ch) {
         return this.children.containsKey(ch);
     }
-    
+
     public Hashtable<String, Node> _getChildren() {
         return this.children;
+    }
+
+    public CustomFile _getFile(String fname) {
+        if (this.children.containsKey(fname)) {
+            Node fl = this.children.get(fname);
+            if (!fl.isDirectory()) {
+                return (CustomFile) fl;
+            }
+        }
+        return null;
+    }
+
+    public Node _get(String n) {
+        if (this.children.containsKey(n)) {
+            Node fl = this.children.get(n);
+            return fl;
+        }
+        return null;
     }
 
     @Override
@@ -271,6 +320,10 @@ class Descriptor {
 
     public Descriptor(boolean isDir, Date d) {
         this(isDir ? "New Folder" : "New File", isDir, d);
+    }
+
+    public void _setName(String n) {
+        this.name = n;
     }
 
     public String _toString() {
