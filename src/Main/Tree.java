@@ -9,7 +9,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.Stack;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -30,7 +33,7 @@ class Tree {
         prt._addChild(n);
     }
 
-    public boolean searchDirectory(Directory start, String n) {        
+    public boolean searchDirectory(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         for (String chk : tmpc.keySet()) {
@@ -40,21 +43,21 @@ class Tree {
         }
         return false;
     }
-    
-    public boolean deepSearch(Directory start, String n) {        
+
+    public Directory deepSearch(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         for (String chk : tmpc.keySet()) {
-            if (chk.equalsIgnoreCase(n)) {
-                return true;
-            }
-
             Node ch = tmpc.get(chk);
             if (ch.isDirectory()) {
-                return deepSearch((Directory) ch, n);
+                if (chk.equalsIgnoreCase(n)) {
+                    return (Directory) ch;
+                } else {
+                    return deepSearch((Directory) ch, n);
+                }
             }
         }
-        return false;
+        return null;
     }
 
     public Directory getDirectory(Directory parent, String n) {
@@ -71,12 +74,21 @@ class Tree {
         return null;
     }
 
-    public void remove(Directory start, Node n) {
+    public void remove(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         if (tmpc.containsKey(n.toString())) {
             start._removeChild(n);
         }
+    }
+
+    public void removeAll(Directory start, String re) {
+        Hashtable<String, Node> tmpc = start._getChildren();
+        tmpc.keySet().stream().forEach((s) -> {
+            if (s.endsWith(re)) {
+                start._removeChild(s);
+            }
+        });
     }
 
     public Directory getCurrentNode() {
@@ -86,19 +98,28 @@ class Tree {
     public Directory getRoot() {
         return this.root;
     }
-    
+
     public void setCurrent(Directory d) {
         this.current = d;
     }
-    
+
     public void setRoot(Directory d) {
         this.root = d;
     }
-    
+
     public void list(Directory n) {
         Hashtable<String, Node> tmpc = n._getChildren();
         tmpc.keySet().stream().forEach((s) -> {
             System.out.println(tmpc.get(s)._getDetails());
+        });
+    }
+
+    public void listAll(Directory curr, String re) {
+        Hashtable<String, Node> tmpc = curr._getChildren();
+        tmpc.keySet().stream().forEach((s) -> {
+            if (s.matches(re)) {
+                System.out.println(tmpc.get(s)._getDetails());
+            }
         });
     }
 }
@@ -130,28 +151,54 @@ abstract class Node {
     }
 
     public abstract String _getDetails();
+
     public abstract boolean isDirectory();
-    
+
+    public String _getPath() {
+        Stack<Node> path = new Stack<>();
+        StringBuilder sb = new StringBuilder();
+        Node n = this;
+        while (n != null) {
+            path.add(n);
+            n = n._getParent();
+        }
+        boolean flag = false;
+        while (!path.isEmpty()) {
+            if (flag) {
+                sb.append("\\");
+            }
+            sb.append(path.pop().toString());
+            flag = true;
+        }
+        return sb.toString();
+    }
+
+    public void rename(String name) {
+        this.desc._setName(name);
+    }
+
     @Override
     public String toString() {
         return this.desc._toString();
     }
 }
 
-class File extends Node {
+class CustomFile extends Node {
+
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
-    private String content;
+    private String content, type;
     private Date modified;
 
-    public File(Directory prt, String n, String con) {
-        this(new Descriptor(n, false, new Date()), prt, new Date(), con);
+    public CustomFile(Directory prt, String n, String con, String type) {
+        this(new Descriptor(n, false, new Date()), prt, new Date(), con, type);
     }
 
-    public File(Descriptor d, Directory prt, Date mf, String c) {
+    public CustomFile(Descriptor d, Directory prt, Date mf, String c, String type) {
         this.desc = d;
         this.parent = prt;
         this.content = c;
+        this.type = type;
     }
 
     public String _getContent() {
@@ -162,10 +209,14 @@ class File extends Node {
         return this.modified;
     }
 
+    public String _getType() {
+        return "DOC";
+    }
+
     @Override
     public String _getDetails() {
         StringBuilder sb = new StringBuilder(dateFormat.format(this.desc._dateCreated())).append("\t");
-        sb.append("<File>").append("\t").append(this.toString());
+        sb.append("<" + this.type.toUpperCase() + ">").append("\t").append(this.toString());
         return sb.toString();
     }
 
@@ -173,9 +224,14 @@ class File extends Node {
     public boolean isDirectory() {
         return false;
     }
+
+    public String _getFile() {
+        return this.toString() + "." + this.type;
+    }
 }
 
 class Directory extends Node {
+
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
     private Hashtable<String, Node> children;
@@ -204,14 +260,36 @@ class Directory extends Node {
         }
     }
 
-    public void _removeChild(Node ch) {
-        if (this.children.contains(ch)) {
+    public void _removeChild(String ch) {
+        if (this.children.containsKey(ch)) {
             this.children.remove(ch);
         }
     }
 
+    public boolean _contains(String ch) {
+        return this.children.containsKey(ch);
+    }
+
     public Hashtable<String, Node> _getChildren() {
         return this.children;
+    }
+
+    public CustomFile _getFile(String fname) {
+        if (this.children.containsKey(fname)) {
+            Node fl = this.children.get(fname);
+            if (!fl.isDirectory()) {
+                return (CustomFile) fl;
+            }
+        }
+        return null;
+    }
+
+    public Node _get(String n) {
+        if (this.children.containsKey(n)) {
+            Node fl = this.children.get(n);
+            return fl;
+        }
+        return null;
     }
 
     @Override
@@ -242,6 +320,10 @@ class Descriptor {
 
     public Descriptor(boolean isDir, Date d) {
         this(isDir ? "New Folder" : "New File", isDir, d);
+    }
+
+    public void _setName(String n) {
+        this.name = n;
     }
 
     public String _toString() {
