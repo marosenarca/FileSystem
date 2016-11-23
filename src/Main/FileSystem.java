@@ -38,6 +38,59 @@ public class FileSystem {
             } else {
                 LOGGER.log(Level.INFO, "A subdirectory {0} already exists.", new Object[]{dir});
             }
+        } else {
+            String[] path = dir.substring(1).split("/");
+            int n = path.length;
+            Directory dr = this.tree.getRoot();
+            for (int i = 1; i < n - 1; i++) {
+                if (this.tree.searchDirectory(dr, path[i])) {
+                    dr = this.tree.getDirectory(dr, path[i]);
+                } else {
+                    Directory newDr = new Directory(path[i], dr);
+                    dr._addChild(newDr);
+                    dr = newDr;
+                }
+            }
+            if (!this.tree.searchDirectory(dr, path[n - 1])) {
+                Directory newDr = new Directory(path[n - 1], dr);
+                dr._addChild(newDr);
+            } else {
+                LOGGER.log(Level.INFO, "A directory {0} already exists.", new Object[]{dir});
+            }
+            this.listAll(dr);
+        }
+    }
+
+    public void rmdir(String dir) {
+        if (dir.indexOf("/root") != 0) {
+            if (!tree.searchDirectory(this.tree.getCurrentNode(), dir)) {
+                LOGGER.log(Level.INFO, "A subdirectory {0} does not exist.", new Object[]{dir});
+
+            } else {
+                this.tree.remove(this.tree.getCurrentNode(), dir);
+                LOGGER.log(Level.INFO, "Subdirectory {0} successfully removed.", new Object[]{dir});
+                listAll();
+            }
+        } else {
+            String[] path = dir.substring(1).split("/");
+            int n = path.length;
+            Directory dr = this.tree.getRoot();
+            boolean flag = true;
+            for (int i = 1; i < n - 1; i++) {
+                if (this.tree.searchDirectory(dr, path[i])) {
+                    dr = this.tree.getDirectory(dr, path[i]);
+                } else {
+                    flag = false;
+                    LOGGER.log(Level.INFO, "A directory {0} does not exist.", new Object[]{path[i]});
+                    break;
+                }
+            }
+            if(flag) {
+                this.tree.remove(dr, path[n-1]);
+                dr._getParent()._addChild(dr);
+                LOGGER.log(Level.INFO, "Subdirectory {0} successfully removed.", new Object[]{dir});
+            }
+            this.listAll(dr);
         }
     }
 
@@ -54,11 +107,38 @@ public class FileSystem {
             } else {
                 LOGGER.log(Level.INFO, "A subdirectory {0} does not exist.", new Object[]{dir});
             }
+        } else {
+            String[] path = dir.substring(1).split("/");
+            int n = path.length;
+            Directory dr = this.tree.getRoot();
+            boolean flag = true;
+            for (int i = 1; i < n; i++) {
+                Directory tmp = this.tree.getDirectory(dr, path[i]);
+                if (tmp != null) {
+                    System.out.println(path[i] + " exists.");
+                    dr = tmp;
+                } else {
+                    LOGGER.log(Level.INFO, "A subdirectory {0} does not exist.", new Object[]{path[i]});
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                this.tree.setCurrent(dr);
+            }
         }
     }
 
     public void listAll() {
         Directory n = this.tree.getCurrentNode();
+        if (n._getChildren().size() == 0) {
+            LOGGER.log(Level.INFO, "This directory is empty.");
+        } else {
+            this.tree.list(n);
+        }
+    }
+
+    public void listAll(Directory n) {
         if (n._getChildren().size() == 0) {
             LOGGER.log(Level.INFO, "This directory is empty.");
         } else {
@@ -104,6 +184,10 @@ class Main {
                         break;
                     case "cd":
                         sys.cdir(inp[1]);
+                        System.out.println("#" + sys.getCurrentDir());
+                        break;
+                    case "rmdir":
+                        sys.rmdir(inp[1]);
                         System.out.println("#" + sys.getCurrentDir());
                         break;
                     default:

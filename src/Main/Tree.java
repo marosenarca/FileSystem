@@ -30,7 +30,22 @@ class Tree {
         prt._addChild(n);
     }
 
-    public boolean searchDirectory(Directory start, String n) {        
+    public void updateDirectory(Directory rt, Directory nw) {
+//        Hashtable<String, Node> tmpc = rt._getChildren();
+//        
+//        for (String chk : tmpc.keySet()) {
+//            if(chk.equalsIgnoreCase(nw.toString())) {
+//                tmpc.replace(chk, nw);
+//                break;
+//            } else if(tmpc.get(chk).isDirectory()) {
+//                rt = (Directory) tmpc.get(chk);
+//                updateDirectory(rt, nw);
+//            }
+//        }
+//        
+    }
+
+    public boolean searchDirectory(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         for (String chk : tmpc.keySet()) {
@@ -40,21 +55,21 @@ class Tree {
         }
         return false;
     }
-    
-    public boolean deepSearch(Directory start, String n) {        
+
+    public Directory deepSearch(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         for (String chk : tmpc.keySet()) {
-            if (chk.equalsIgnoreCase(n)) {
-                return true;
-            }
-
             Node ch = tmpc.get(chk);
             if (ch.isDirectory()) {
-                return deepSearch((Directory) ch, n);
+                if (chk.equalsIgnoreCase(n)) {
+                    return (Directory) ch;
+                } else {
+                    return deepSearch((Directory) ch, n);
+                }
             }
         }
-        return false;
+        return null;
     }
 
     public Directory getDirectory(Directory parent, String n) {
@@ -71,7 +86,7 @@ class Tree {
         return null;
     }
 
-    public void remove(Directory start, Node n) {
+    public void remove(Directory start, String n) {
         Hashtable<String, Node> tmpc = start._getChildren();
 
         if (tmpc.containsKey(n.toString())) {
@@ -79,6 +94,10 @@ class Tree {
         }
     }
 
+    public void deepRemove(Directory prt, String n) {
+        
+    }    
+    
     public Directory getCurrentNode() {
         return this.current;
     }
@@ -86,15 +105,15 @@ class Tree {
     public Directory getRoot() {
         return this.root;
     }
-    
+
     public void setCurrent(Directory d) {
         this.current = d;
     }
-    
+
     public void setRoot(Directory d) {
         this.root = d;
     }
-    
+
     public void list(Directory n) {
         Hashtable<String, Node> tmpc = n._getChildren();
         tmpc.keySet().stream().forEach((s) -> {
@@ -130,8 +149,9 @@ abstract class Node {
     }
 
     public abstract String _getDetails();
+
     public abstract boolean isDirectory();
-    
+
     @Override
     public String toString() {
         return this.desc._toString();
@@ -139,6 +159,7 @@ abstract class Node {
 }
 
 class File extends Node {
+
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
     private String content;
@@ -176,6 +197,7 @@ class File extends Node {
 }
 
 class Directory extends Node {
+
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
     private Hashtable<String, Node> children;
@@ -204,12 +226,16 @@ class Directory extends Node {
         }
     }
 
-    public void _removeChild(Node ch) {
-        if (this.children.contains(ch)) {
+    public void _removeChild(String ch) {
+        if (this.children.containsKey(ch)) {
             this.children.remove(ch);
         }
     }
 
+    public boolean _contains(String ch) {
+        return this.children.containsKey(ch);
+    }
+    
     public Hashtable<String, Node> _getChildren() {
         return this.children;
     }
