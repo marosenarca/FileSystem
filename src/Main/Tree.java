@@ -5,14 +5,17 @@
  */
 package Main;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -30,63 +33,81 @@ class Tree {
 
     public void insert(Node n, Directory prt) {
         n._setParent(prt);
-        prt._addChild(n);
-    }
-
-    public boolean searchDirectory(Directory start, String n) {
-        Hashtable<String, Node> tmpc = start._getChildren();
-
-        for (String chk : tmpc.keySet()) {
-            if (chk.equalsIgnoreCase(n)) {
-                return true;
-            }
+        if (n.isDirectory()) {
+            prt._addSubdirectory((Directory) n);
+        } else {
+            prt._addFile((CustomFile) n);
         }
-        return false;
     }
 
-    public Directory deepSearch(Directory start, String n) {
-        Hashtable<String, Node> tmpc = start._getChildren();
+    public boolean searchDirectory(Directory start, String n, int isDir) {
+        switch (isDir) {
+            case 1:
+                return start._containsSubdirectory(n);
+            case 0:
+                return (start._containsSubdirectory(n) || start._containsFile(n));
+            case -1:
+                return start._containsFile(n);
+            default:
+                return false;
+        }
+    }
 
-        for (String chk : tmpc.keySet()) {
-            Node ch = tmpc.get(chk);
-            if (ch.isDirectory()) {
-                if (chk.equalsIgnoreCase(n)) {
-                    return (Directory) ch;
-                } else {
-                    return deepSearch((Directory) ch, n);
+    public ArrayList<String> fullSearch(Directory start, String n, ArrayList<String> arr) {
+        Hashtable<String, Directory> dirs = start._getSubdirectories();
+        Hashtable<String, CustomFile> fils = start._getFiles();
+
+        for (CustomFile f : fils.values()) {
+            if (f._getName().equalsIgnoreCase(n) || f.toString().equalsIgnoreCase(n)) {
+                String fp = f._getPath();
+                if (!arr.contains(fp)) {
+                    arr.add(fp);
                 }
             }
         }
-        return null;
+
+        for (Directory d : dirs.values()) {
+            if (d.toString().equalsIgnoreCase(n)) {
+                String dp = d._getPath();
+                if (!arr.contains(dp)) {
+                    arr.add(dp);
+                }
+            }
+            arr = fullSearch(d, n, arr);
+        }
+        return arr;
     }
 
     public Directory getDirectory(Directory parent, String n) {
-        Hashtable<String, Node> tmpc = parent._getChildren();
-        for (String chk : tmpc.keySet()) {
-            Node ch = tmpc.get(chk);
-            if (ch.isDirectory()) {
-                if (ch.toString().equalsIgnoreCase(n)) {
-                    return (Directory) ch;
-                }
-//                return getDirectory((Directory) ch, n);
-            }
-        }
-        return null;
+        return parent._getSubdirectory(n);
     }
 
-    public void remove(Directory start, String n) {
-        Hashtable<String, Node> tmpc = start._getChildren();
-
-        if (tmpc.containsKey(n.toString())) {
-            start._removeChild(n);
+    public void remove(Directory start, String n, int isDir) {
+        switch (isDir) {
+            case 1:
+                if (start._containsSubdirectory(n)) {
+                    start._removeSubdirectory(n);
+                }
+                break;
+            case 0:
+                remove(start, n, 1);
+                remove(start, n, -1);
+                break;
+            case -1:
+                if (start._containsFile(n)) {
+                    start._removeFile(n);
+                }
+                break;
+            default:
+                break;
         }
     }
 
     public void removeAll(Directory start, String re) {
-        Hashtable<String, Node> tmpc = start._getChildren();
+        Hashtable<String, CustomFile> tmpc = start._getFiles();
         tmpc.keySet().stream().forEach((s) -> {
-            if (s.endsWith(re)) {
-                start._removeChild(s);
+            if (s.matches(re)) {
+                start._removeFile(s);
             }
         });
     }
@@ -108,20 +129,25 @@ class Tree {
     }
 
     public void list(Directory n) {
-        Hashtable<String, Node> tmpc = n._getChildren();
-        tmpc.keySet().stream().forEach((s) -> {
-            System.out.println(tmpc.get(s)._getDetails());
-        });
+        ArrayList<String> ch = n._listAll();
+        for (String s : ch) {
+            System.out.println(s);
+        }
     }
 
     public void listAll(Directory curr, String re) {
-        Hashtable<String, Node> tmpc = curr._getChildren();
-        tmpc.keySet().stream().forEach((s) -> {
-            if (s.matches(re)) {
-                System.out.println(tmpc.get(s)._getDetails());
+        ArrayList<Node> all = new ArrayList<>(curr._getSubdirectories().values());
+        all.addAll(curr._getFiles().values());
+//        ArrayList<String> ch = new ArrayList<>();
+
+        for (Node n : all) {
+            if (n.toString().matches(re)) //                ch.add(n._getDetails());
+            {
+                System.out.println(n._getDetails());
             }
-        });
+        }
     }
+
 }
 
 abstract class Node {
@@ -177,13 +203,15 @@ abstract class Node {
         this.desc._setName(name);
     }
 
-    @Override
-    public String toString() {
-        return this.desc._toString();
+    public boolean equals(Node n) {
+        return this.desc.equals(n.desc);
     }
+
+    @Override
+    public abstract String toString();
 }
 
-class CustomFile extends Node {
+class CustomFile extends Node implements Serializable {
 
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
@@ -202,7 +230,8 @@ class CustomFile extends Node {
     }
 
     public String _getContent() {
-        return this.content.isEmpty() ? "This file is empty" : this.content;
+        //TODO
+        return "This file is empty";
     }
 
     public Date _getDateModified() {
@@ -211,6 +240,10 @@ class CustomFile extends Node {
 
     public String _getType() {
         return "DOC";
+    }
+
+    public String _getName() {
+        return this.desc.toString();
     }
 
     @Override
@@ -228,68 +261,145 @@ class CustomFile extends Node {
     public String _getFile() {
         return this.toString() + "." + this.type;
     }
+
+    @Override
+    public String toString() {
+        return this.desc.toString().concat("." + this.type);
+    }
 }
 
 class Directory extends Node {
 
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
-    private Hashtable<String, Node> children;
+    private Hashtable<String, Directory> subdirectories;
+    private Hashtable<String, CustomFile> files;
 
     public Directory(String n) {
-        this(new Descriptor(n, true, new Date()), null, new Hashtable<>());
+        this(new Descriptor(n, true, new Date()), null, new Hashtable<>(), new Hashtable<>());
     }
 
     public Directory(String n, Directory prt) {
-        this(new Descriptor(n, true, new Date()), prt, new Hashtable<>());
+        this(new Descriptor(n, true, new Date()), prt, new Hashtable<>(), new Hashtable<>());
     }
 
-    public Directory(Descriptor d, Directory prt, Hashtable<String, Node> chd) {
+    public Directory(Descriptor d, Directory prt, Hashtable<String, Directory> chd, Hashtable<String, CustomFile> chf) {
         this.desc = d;
         this.parent = prt;
-        this.children = chd;
+        this.subdirectories = chd;
+        this.files = chf;
     }
 
-    public void _addChild(Node ch) {
+    public void _addSubdirectory(Directory ch) {
         String k = ch.toString();
-        if (this.children.containsKey(k)) {
-            Node old = this.children.get(k);
-            this.children.replace(k, old, ch);
+        if (this.subdirectories.containsKey(k)) {
+            Directory old = this.subdirectories.get(k);
+            if (old.equals(ch)) {
+                this.subdirectories.replace(k, old, ch);
+            } else {
+                this.subdirectories.put(k, ch);
+            }
         } else {
-            this.children.put(k, ch);
+            this.subdirectories.put(k, ch);
         }
     }
 
-    public void _removeChild(String ch) {
-        if (this.children.containsKey(ch)) {
-            this.children.remove(ch);
+    public void _addFile(CustomFile ch) {
+        String k = ch.toString();
+        if (this.files.containsKey(k)) {
+            CustomFile old = this.files.get(k);
+            if (old.equals(ch)) {
+                this.files.replace(k, old, ch);
+            } else {
+                this.files.put(k, ch);
+            }
+        } else {
+            this.files.put(k, ch);
         }
     }
 
-    public boolean _contains(String ch) {
-        return this.children.containsKey(ch);
+    public void _removeSubdirectory(String ch) {
+        if (this.subdirectories.containsKey(ch)) {
+            this.subdirectories.remove(ch);
+        }
     }
 
-    public Hashtable<String, Node> _getChildren() {
-        return this.children;
+    public void _removeFile(String f) {
+        if (this.files.containsKey(f)) {
+            this.files.remove(f);
+        }
+    }
+
+    public void _removeChild(String n, boolean isDir) {
+        if (this.subdirectories.containsKey(n) && isDir) {
+            this.subdirectories.remove(n);
+        } else if (this.files.containsKey(n) && !isDir) {
+            this.files.remove(n);
+        }
+    }
+
+    public boolean _containsSubdirectory(String ch) {
+        return this.subdirectories.containsKey(ch);
+    }
+
+    public boolean _containsFile(String ch) {
+        if (this.files.containsKey(ch)) {
+            CustomFile f = this.files.get(ch);
+            if (f.toString().equalsIgnoreCase(ch)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Hashtable<String, Directory> _getSubdirectories() {
+        return this.subdirectories;
+    }
+
+    public Hashtable<String, CustomFile> _getFiles() {
+        return this.files;
     }
 
     public CustomFile _getFile(String fname) {
-        if (this.children.containsKey(fname)) {
-            Node fl = this.children.get(fname);
-            if (!fl.isDirectory()) {
-                return (CustomFile) fl;
-            }
+        if (this.files.containsKey(fname)) {
+            return this.files.get(fname);
         }
         return null;
     }
 
-    public Node _get(String n) {
-        if (this.children.containsKey(n)) {
-            Node fl = this.children.get(n);
-            return fl;
+    public Directory _getSubdirectory(String n) {
+        if (this.subdirectories.containsKey(n)) {
+            return this.subdirectories.get(n);
         }
         return null;
+    }
+
+    public ArrayList<String> _listAll() {
+        ArrayList<String> ret = new ArrayList<>();
+        ArrayList<Node> ch = new ArrayList<>(this.subdirectories.values());
+        ch.addAll(this.files.values());
+
+        Collections.sort(ch, new Comparator() {
+            @Override
+            public int compare(Object o1, Object o2) {
+                int res = o1.toString().compareTo(o2.toString());
+                if (res == 0) {
+                    return o1.hashCode() < o2.hashCode() ? -1 : 1;
+                } else {
+                    return res;
+                }
+            }
+        });
+
+        for (Node n : ch) {
+            ret.add(n._getDetails());
+        }
+
+        return ret;
+    }
+
+    public boolean isEmpty() {
+        return (this.files.isEmpty() && this.subdirectories.isEmpty());
     }
 
     @Override
@@ -302,6 +412,11 @@ class Directory extends Node {
     @Override
     public boolean isDirectory() {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return this.desc.toString();
     }
 
 }
@@ -326,11 +441,17 @@ class Descriptor {
         this.name = n;
     }
 
-    public String _toString() {
+    @Override
+    public String toString() {
         return this.name;
     }
 
     public Date _dateCreated() {
         return this.dtCreated;
     }
+
+    public boolean equals(Descriptor d) {
+        return (this.name.equalsIgnoreCase(d.toString()) && (this.isDirectory == d.isDirectory));
+    }
+
 }
