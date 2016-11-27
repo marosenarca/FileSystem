@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  *
  * @author MaRose
  */
-class Tree {
+class Tree implements Serializable {
 
     private static final Logger LOGGER = Logger.getLogger(Tree.class.getName());
     private Directory root, current;
@@ -211,7 +211,7 @@ abstract class Node {
     public abstract String toString();
 }
 
-class CustomFile extends Node implements Serializable {
+class CustomFile extends Node {
 
     protected DateFormat dateFormat = new SimpleDateFormat("MMMM dd, yyyy, hh:mm:ss a");
 
@@ -229,9 +229,12 @@ class CustomFile extends Node implements Serializable {
         this.type = type;
     }
 
+    public void _seContent(String s) {
+        this.content = s;
+    }
+    
     public String _getContent() {
-        //TODO
-        return "This file is empty";
+        return this.content;
     }
 
     public Date _getDateModified() {
@@ -260,6 +263,10 @@ class CustomFile extends Node implements Serializable {
 
     public String _getFile() {
         return this.toString() + "." + this.type;
+    }
+
+    public String _getExt() {
+        return this.type;
     }
 
     @Override
