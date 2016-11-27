@@ -1,0 +1,11 @@
+mkdir /root/rcmdulaca/cmsc142
+cd rcmdulaca/cmsc142
+cd ..
+cd ..
+mkdir cmsc142
+> newfile.txt
+ls
+mv cmsc142 rcmdulaca/cmsc142
+ls
+cd rcmdulaca/cmsc142
+ls
